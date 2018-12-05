@@ -20,6 +20,7 @@ class MockAPI(object):
 
     def run_from_filepath(self, filepath):
         self.run_from_filepath_called = filepath
+        return OK
 
 
 class TestTaskIncludeTasks(unittest.TestCase):
@@ -51,9 +52,13 @@ class TestTaskIncludeTasks(unittest.TestCase):
         )
 
     def test_apply_(self):
-        include_tasks.apply_(file=self.yaml_filepath)
+        status = include_tasks.apply_(file=self.yaml_filepath)
 
         self.assertEqual(
             self.mock_api.run_from_filepath_called,
             self.yaml_filepath
+        )
+        self.assertEqual(
+            status,
+            OK
         )

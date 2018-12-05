@@ -42,6 +42,7 @@ class _IniConfigParser(ConfigParser):
                 self.remove_option(section, option)
             else:
                 self.remove_section(section)
+
         elif state == STATE_PRESENT:
             if not self.has_section(section):
                 self.add_section(section)
@@ -78,3 +79,5 @@ def apply_(src, section, dest=None, state=STATE_PRESENT, option=None, value=None
 
     with open(src, 'w+') as ini_file:
         ini_file.write(new_ini_content)
+
+    return OK

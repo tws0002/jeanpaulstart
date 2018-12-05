@@ -1,7 +1,7 @@
 import unittest
 from copy import deepcopy
-from jeanpaulstart.tasks import ini_file
 from jeanpaulstart.constants import *
+from jeanpaulstart.tasks import ini_file
 
 
 VARIABLE_NAME = 'VARIABLE_NAME'
@@ -50,7 +50,7 @@ class TestTaskIniFile(unittest.TestCase):
     def test_ini_set_new_section(self):
         new_ini_content = ini_file._update_ini_content(
             ini_content=INI_CONFIG_CONTENT,
-            state='present',
+            state='present',  # STATE_PRESENT must be equal to 'present'
             section='NewSection',
             option=VARIABLE_NAME,
             value=VARIABLE_VALUE
@@ -71,7 +71,7 @@ VARIABLE_NAME=MICHEL
     def test_ini_del_section(self):
         new_ini_content = ini_file._update_ini_content(
             ini_content=INI_CONFIG_CONTENT,
-            state='absent',
+            state='absent',  # STATE_ABSENT must be equal to 'absent',
             section='SectionTwo'
         )
         self.assertEqual(

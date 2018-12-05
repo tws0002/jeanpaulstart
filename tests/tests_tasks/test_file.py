@@ -1,8 +1,8 @@
 import unittest
 from copy import deepcopy
+from jeanpaulstart.constants import *
 from jeanpaulstart.tasks import file_
 from jeanpaulstart.batch import validator
-from jeanpaulstart.constants import *
 
 
 USER_DATA = {
@@ -58,17 +58,25 @@ class TestTaskCopy(unittest.TestCase):
         )
 
     def test_apply_directory(self):
-        file_.apply_(path="path", state=STATE_DIRECTORY)
+        status = file_.apply_(path="path", state=STATE_DIRECTORY)
 
         self.assertEqual(
             self.mock_file_io.mkdir_called,
             "path"
         )
+        self.assertEqual(
+            status,
+            OK
+        )
 
     def test_apply_absent(self):
-        file_.apply_(path="path", state=STATE_ABSENT)
+        status = file_.apply_(path="path", state=STATE_ABSENT)
 
         self.assertEqual(
             self.mock_file_io.remove_called,
             "path"
+        )
+        self.assertEqual(
+            status,
+            OK
         )

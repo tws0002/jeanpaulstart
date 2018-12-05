@@ -1,7 +1,7 @@
 import unittest
 from copy import deepcopy
-from jeanpaulstart.tasks import environment
 from jeanpaulstart.constants import *
+from jeanpaulstart.tasks import environment
 
 
 USER_DATA = {
@@ -24,7 +24,7 @@ SPLITTED = {
 
 
 class MockEnvironment(object):
-    def set_env_variable(self, name, value):
+    def set(self, name, value):
         self.set_env_variable_called = name, value
 
 
@@ -54,9 +54,13 @@ class TestTaskEnvironment(unittest.TestCase):
         )
 
     def test_apply_(self):
-        environment.apply_(name="name", value="value")
+        status = environment.apply_(name="name", value="value")
 
         self.assertEqual(
             self.mock_environment.set_env_variable_called,
             ("name", "value")
+        )
+        self.assertEqual(
+            status,
+            OK
         )

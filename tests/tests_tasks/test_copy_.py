@@ -71,9 +71,13 @@ class TestTaskCopy(unittest.TestCase):
         )
 
     def test_apply_(self):
-        copy_.apply_(src="src", dest="dest", force="force")
+        status = copy_.apply_(src="src", dest="dest", force="force")
 
         self.assertEqual(
             self.mock_file_io.copy_called,
             ("src", "dest", "force")
+        )
+        self.assertEqual(
+            status,
+            OK
         )

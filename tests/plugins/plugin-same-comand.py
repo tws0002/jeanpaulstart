@@ -22,4 +22,4 @@ def normalize_after_split(splitted):
 
 
 def apply_(name, arguments):
-    pass
+    return OK

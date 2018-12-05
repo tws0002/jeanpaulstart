@@ -1,3 +1,4 @@
+from jeanpaulstart.constants import *
 TASK_COMMAND = 'command-name'
 
 
@@ -15,4 +16,4 @@ def normalize_after_split(splitted):
 
 
 def apply_(name, arguments):
-    pass
+    return OK

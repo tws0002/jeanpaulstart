@@ -16,3 +16,5 @@ def normalize_after_split(splitted):
 
 def apply_(src, dest, force):
     file_io.copy(src, dest, force)
+
+    return OK

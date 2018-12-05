@@ -1,7 +1,7 @@
 ---
 name: 3Ds Max 2016
 icon_path: $ENVIRONMENT\_config\jean-paul-start\icons\max-2016.png
-tags: 
+tags:
   - DCC
   - 3D
   - Max
@@ -27,13 +27,13 @@ tasks:
       src: $INI_TEMPLATE
       dest: $INI_SOURCE
       force: no
-      
+
   - name: Create custom 3dsmax.ini if missing
     copy:
       src: $INI_SOURCE
       dest: $INI_TARGET
       force: no
-      
+
   - name: Additional Icons
     ini_file:
       src: $INI_TARGET
@@ -58,6 +58,6 @@ tasks:
       value: 1
 
   - name: Launch 3DS Max 2016
-    raw: 
+    raw:
       command: "\"$MAX_DIRECTORY\\3dsmax.exe\" -p ${MAX_NAME}_Plugin_UserSettings.ini %* -i ${MAX_NAME}_3dsmax.ini"
 ...

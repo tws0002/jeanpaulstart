@@ -1,14 +1,40 @@
 import os
 import unittest
 from glob import glob
-from jeanpaulstart import plugin_loader
-import mock_plugin
+from jeanpaulstart import constants, plugin_loader
+from mock_plugin import MockPlugin
 
 
 PLUGIN_1_CONTENT = """
 def ca():
     return 4
 """  # Basic content to test loader
+
+
+class MockLoadedPlugins(object):
+    def __init__(self):
+        self.plugin_missing = False
+
+    def get(self, name, default):
+        if self.plugin_missing:
+            return default
+
+        return MockPlugin('command_name')
+
+    def keys(self):
+        if self.plugin_missing:
+            return []
+
+        return ['command_name']
+
+    def __getitem__(self, item):
+        if not self.plugin_missing:
+            return MockPlugin('command_name')
+
+
+class MockPluginModule(object):
+    def __init__(self):
+        self.loaded_plugins = MockLoadedPlugins()
 
 
 class TestPluginLoader(unittest.TestCase):
@@ -18,9 +44,9 @@ class TestPluginLoader(unittest.TestCase):
 
     def _mock_validate(self, plugin):
         if self._mock_plugins_valid:
-            return plugin_loader.Loader.OK
+            return constants.OK
         else:
-            return plugin_loader.Loader.VALIDATE_MISSING
+            return constants.PLUG_VALIDATE_MISSING
 
     def setUp(self):
         self.plugin_folder = os.path.join(os.path.dirname(__file__), "plugins")
@@ -28,8 +54,8 @@ class TestPluginLoader(unittest.TestCase):
         self._mock_plugins_valid = True
 
         self._mock_plugins = {
-            'plugin_1': mock_plugin.MockPlugin("plugin_1"),
-            'plugin_2': mock_plugin.MockPlugin("plugin_2")
+            'plugin_1': MockPlugin("plugin_1"),
+            'plugin_2': MockPlugin("plugin_2")
         }
 
         self.temp_plugin_folder = os.path.expandvars("$TEMP/jeanpaulstart/plugins")
@@ -59,6 +85,15 @@ class TestPluginLoader(unittest.TestCase):
 
         if os.path.isdir(self.temp_plugin_folder):
             os.rmdir(self.temp_plugin_folder)
+
+    def test_repr(self):
+        repr = str(self.loader)
+        expected_repr = "Loader(folder={})".format(self.temp_plugin_folder)
+
+        self.assertEqual(
+            repr,
+            expected_repr
+        )
 
     def test_list_plugin_names(self):
         plugins = self.loader.list_names()
@@ -117,7 +152,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.OK
+            constants.OK
         )
 
     def test_validate_task_command_missing(self):
@@ -127,7 +162,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.TASK_COMMAND_MISSING
+            constants.PLUG_COMMAND_MISSING
         )
 
     def test_validate_task_command_not_str(self):
@@ -137,7 +172,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.TASK_COMMAND_NOT_STR
+            constants.PLUG_COMMAND_NOT_STR
         )
 
     def test_validate_missing(self):
@@ -147,7 +182,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.VALIDATE_MISSING
+            constants.PLUG_VALIDATE_MISSING
         )
 
     def test_normalize_missing(self):
@@ -157,7 +192,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.NORMALIZE_MISSING
+            constants.PLUG_NORMALIZE_MISSING
         )
 
     def test_apply_missing(self):
@@ -167,7 +202,7 @@ class TestPluginLoader(unittest.TestCase):
 
         self.assertEqual(
             status,
-            plugin_loader.Loader.APPLY_MISSING
+            constants.PLUG_APPLY_MISSING
         )
 
     def test_load_all(self):

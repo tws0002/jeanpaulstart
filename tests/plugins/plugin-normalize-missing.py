@@ -9,4 +9,4 @@ def validate(user_data):
 
 
 def apply_(name, arguments):
-    pass
+    return OK

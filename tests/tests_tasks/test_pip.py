@@ -1,7 +1,7 @@
 import unittest
 from copy import deepcopy
 from jeanpaulstart.tasks import pip
-from jeanpaulstart.constants import STATE_PRESENT
+from jeanpaulstart.constants import *
 from jeanpaulstart.batch import validator
 
 
@@ -27,6 +27,7 @@ class TestTaskPip(unittest.TestCase):
 
     def _mock_call(self, command, shell):
         self._mock_call_called = command, shell
+        return OK
 
     def setUp(self):
         self._mock_call_called = None
@@ -56,17 +57,25 @@ class TestTaskPip(unittest.TestCase):
         )
 
     def test_apply_present(self):
-        pip.apply_(name="name.git", state=pip.STATE_PRESENT)
+        status = pip.apply_(name="name.git", state=pip.STATE_PRESENT)
 
         self.assertEqual(
             self._mock_call_called,
             ('pip install name.git', True)
         )
+        self.assertEqual(
+            status,
+            OK
+        )
 
     def test_apply_force_reinstall(self):
-        pip.apply_(name="name.git", state=pip.STATE_FORCE_REINSTALL)
+        status = pip.apply_(name="name.git", state=pip.STATE_FORCE_REINSTALL)
 
         self.assertEqual(
             self._mock_call_called,
             ('pip install --upgrade name.git', True)
+        )
+        self.assertEqual(
+            status,
+            OK
         )

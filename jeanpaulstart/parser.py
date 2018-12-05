@@ -45,6 +45,10 @@ class _OrderedDictYAMLLoader(yaml.Loader):
         return mapping
 
 
+def _norm_slashes(path):
+    return path.replace('\\', os.sep).replace('/', os.sep)
+
+
 def _str_ordered_dict(pairs):
     return OrderedDict(
         [(_str_hook(key, ignore_dicts=True), _str_hook(value, ignore_dicts=True)) for key, value in pairs]
@@ -62,16 +66,38 @@ def _str_hook(data, ignore_dicts=False):
 
 
 def from_yaml(yaml_content):
+    """
+    Parses a YAML string
+    :param yaml_content:
+    :return:
+    """
     data = yaml.load(yaml_content, _OrderedDictYAMLLoader)
     return data
 
 
 def from_json(json_content):
+    """
+    Parses a JSON string
+    :param json_content:
+    :return:
+    """
     data = _str_hook(
         json.loads(json_content, object_pairs_hook=_str_ordered_dict, object_hook=_str_hook),
         ignore_dicts=True
     )
     return data
+
+
+def parse(content):
+    """
+    Tries to parse as YAML, as JSON on failure
+    :param content:
+    :return:
+    """
+    try:
+        return from_yaml(content)
+    except yaml.YAMLError as e:
+        return from_json(content)
 
 
 def _from_json_file(filepath):
@@ -91,6 +117,14 @@ def _from_yaml_file(filepath):
 
 
 def from_file(filepath):
+    """
+    Parses from a filepath
+    Parser is choosen from extension (.json / .yml)
+    :param filepath:
+    :return: None if file not parsed or doesn't exist or not .json / .yml
+    """
+    filepath = _norm_slashes(filepath)
+
     if not os.path.isfile(filepath):
         return None
 
@@ -102,24 +136,36 @@ def from_file(filepath):
 
 
 def from_folder(folder):
-    data = list()
+    """
+    Lists all the .json / .yml files in a given folder
+    :param folder:
+    :return: a list filepathes
+    """
+    filepathes = list()
 
     if not os.path.exists(folder):
-        return data
+        return filepathes
 
     for filename in sorted(os.listdir(folder)):
-        filepath = os.path.join(folder, filename).replace('\\', '/')
-        file_data = from_file(filepath)
-        if file_data:
-            data.append((filepath, file_data))
+        filepath = _norm_slashes(os.path.join(folder, filename))
 
-    return data
+        if not filepath.endswith(('.json', '.yml')): continue
+        if not os.path.exists(filepath): continue
+
+        filepathes.append(filepath)
+
+    return filepathes
 
 
 def from_folders(folders):
-    data = list()
+    """
+    Lists all the .json / .yml files in all the given folders
+    :param folders:
+    :return: a list filepathes
+    """
+    filepathes = list()
 
     for folder in folders:
-        data += from_folder(folder)
+        filepathes += from_folder(folder)
 
-    return data
+    return filepathes

@@ -1,16 +1,10 @@
 # Jean Paul Start
 
-![](jeanpaulstartui.jpg)
+L'enfer, c'est les .bats
 
-_L'enfer, c'est les .bats_
+_Jean-Paul Start is verbose about plugin loading, batch loading and parsing, task execution, ..._
 
-- Execution de batches avec une syntaxe proche de celle d'[Ansible](http://docs.ansible.com/ansible/latest/user_guide/playbooks.html)
-
-- Fenêtre affichant les icônes correspondant aux batches
-
-- Extensibilité par plugins
-
-- Utilisé sous Windows, normalement compatible Linux
+_Be sure to set your logging level to `INFO` if needed_ 
 
 ## Installation
 
@@ -18,13 +12,60 @@ _L'enfer, c'est les .bats_
 pip install git+https://github.com/cube-creative/jeanpaulstart.git
 ````
 
-## Batches
+## Usage as a CLI
 
-Un batch décrit au format YAML un environnement (à travers des variables), puis des actions à exécuter
+```bash
+python -m jeanpaulstart -f path/to/a/batch.yml
+```
 
-Exemple basique :
+## Usage from the API
 
-````yaml
+### Basic batch run
+
+```python
+import jeanpaulstart
+
+jeanpaulstart.run_from_filepath('path/to/a/batch.yml')
+```
+
+### Batch run inside a GUI
+
+Tasks can be run step by step, so progress can be forwarded to the user 
+
+Here, `ui` stands for any class that represents a window or dialog
+
+```python
+import jeanpaulstart
+
+executor = jeanpaulstart.executor_from_filepath('path/to/a/batch.yml')
+
+while not executor.has_stopped:
+    ui.set_status_message(executor.next_task.name)
+
+    status, messages = executor.step()
+    if status != jeanpaulstart.OK:
+        ui.set_status_message(' '.join([messages[-1], status]))
+    
+    ui.set_progress(executor.progress)
+
+if executor.success:
+    ui.set_status_message('Execution OK !')
+    ui.set_progress(0.0)
+``` 
+
+## Batch Redaction
+
+Batch are redacted in YAML or JSON, in a way similar to Ansible playbooks 
+
+A batch describes 
+
+- a name
+- an icon path
+- tags
+- an environment (through variables, can be omitted)
+- tasks to perform
+
+```yaml
 ---
 name: Jean Bauchefort
 icon_path: $ENVIRONMENT/_config/jeanpaulstart/icons/jean-bauchefort.png
@@ -39,45 +80,15 @@ tasks:
     raw:
       command: python -m jeanbauchefortui
 ...
-````
+```
 
-Pour un exemple plus complet, regarder [example-batch.yml](example-batch.yml)
+For a complete example please read [example-batch.yml](example-batch.yml)
 
-## Ligne de commande
+## User Tags
 
-- Il est possible d'appeler un batch en ligne de commande 
+A YAML file represents how usernames (based on `os.getpass.getuser()`) are associated with batch tags
 
-````bash
-python -m jeanpaulstart --filepath /path/to/a/batch.yml
-````
-
-- Il est possible d'executer un batch au format JSON sérialisé (peu commun)
-
-_L'utilisation du flag `--not-normalized` est conseillée_
-
-````bash
-python -m jeanpaulstart --not-normalized --json {"name": "3DS Max", ... }
-````
-
-## Interface Graphique
-
-Il existe une version PySide de Jean-Paul Start
-
-Elle se base sur les dossiers contenant des batches, et un fichier de configuration associant les noms d'utilisateurs (obtenus avec `getpass.getuser()`) aux tags présents dans les batches
-
-### Lancement
-
-Il suffit d'appeler le module `jeanpaulstartui`
-
-````bash
-python -m jeanpaulstartui --batches /path/to/a/batch/folder;/path/to/another/folder --tags /path/to/user-tags.yml
-````
-
-### User Tags
-
-Le fichier user tags représente au format YAML l'association de nom d'utilisateurs à des tags
-
-Exemple
+Example
 
 ````yaml
 ---
@@ -95,9 +106,9 @@ rigging:
 ...
 ````
 
-Ainsi, les batches portant les tags 'production' apparaitront pour l'utilisateur `jp.sartre`
+Batches with 'production' tag will show for `jp.sartre`
 
-- Il est possible de référencer un groupe dans un autre groupe en utilisant le caractère spécial `$`
+- Special character `$` allows to reference a group withing another group
 
 ````yaml
 everyone:
@@ -108,19 +119,17 @@ everyone:
 ...
 ````
 
-## Commandes disponibles dans les YAML de batch
+## Tasks
 
-Les commandes disponibles sont appelées tâches
+Each task is identified by a command name
 
-L'execution de chaque tâche est décrite dans un module python du package `jeanpaulstart.tasks`
-
-Ces modules sont listés au démarrage de Jean-Paul Start, s'ils répondent aux exigences du plugin-loader, deviennent disponible lors de l'exécution des batches
+Tasks are written as plugins, in the package `jeanpaulstart.tasks`, they must conform to what the plugin loader expects
 
 ### Copy
 
-Permet de copier un fichier
+Copies a file
 
-Si la destination existe, et `force: no`, aucune action n'est effectuée
+If destination exists and `force: no`, nothing will happen
 
 ````yaml
 - name: Name of task
@@ -132,20 +141,24 @@ Si la destination existe, et `force: no`, aucune action n'est effectuée
 
 ### File
 
-Crée un fichier ou un dossier
+Creates a file
+
+Use `state: directory` if you want to create a directory
+
+Use `state: absent` if you want to remove a file, or a directory and its subdirectories
 
 ````yaml
 - name: Name of task
   file:
     path: /path/to/file
-    state: [directory|file]
+    state: [directory|absent]
 ````
 
 ### Include Tasks
 
-Permet d'exécuter un batch
+Runs another batch file
 
-L'environnement courant est passé au batch appelé, les modifications faites à l'environnement par le batch appelé ne sont pas conservées dans les tâches suivantes
+Current environment is passed to executed batch, modifications made by that batch to the environment are not kept
 
 ````yaml
 - name: Name
@@ -155,7 +168,7 @@ L'environnement courant est passé au batch appelé, les modifications faites à
 
 ### Ini File
 
-Permet de modifier un fichier .ini
+Modifies a config file (.ini)
 
 ````yaml
 - name: Task Name
@@ -167,15 +180,24 @@ Permet de modifier un fichier .ini
     value: valueValue
 ````
 
-### Pip
+### Pip / Pip3
 
-Exécute la commande `pip install`
+Runs `pip install` / `pip3 install`
 
-Le paramètre `state` est facultatif, il vaut `present` par défaut
+Please make sure that `pip` / `pip3` is in your `$PATH`
+
+Parameter `state` is not mandatory, defaults to `present`
 
 ````yaml
 - name: Task Name
   pip:
+      name: PySide
+      state: [present|forcereinstall]
+````
+
+````yaml
+- name: Task Name
+  pip3:
       name: PySide
       state: [present|forcereinstall]
 ````
@@ -188,24 +210,31 @@ Le paramètre `state` est facultatif, il vaut `present` par défaut
 
 ### Raw
 
-Exécute une commande dans le terminal
+Run a command in the terminal
 
-Le paramètre `async` exécute la commande dans un processus enfant, sans interrompre l'exécution (`Popen()`) (facultatif)
-Le paramètre `open_terminal` ouvre un nouveau terminal (facultatif)
+Parameter `async` spawns a new process (`Popen()`)
+Parameter `open_terminal` opens a new terminal window
 
-`async` vaut `True` par défaut, `open_terminal` vaut `False` par défaut
+`async` defaults to `True`
+`open_terminal` defaults to `False`
+
+If the exit code of the command is 0, `jeanpaulstart.OK` is return, else the exit code is returned
+
+If `async: yes`, `jeanpaulstart.OK` is immediately returned
 
 ````yaml
 - name: Launch djv_view
   raw: 
     command: "\"C:\\Program Files\\djv-1.1.0-Windows-64\\bin\\djv_view.exe\""
-    async:[yes|no]
-    open_terminal:[yes|no]
+    async: [yes|no]
+    open_terminal: [yes|no]
 ````
 
 ### Template
 
-Copie un fichier template au format [Jinja2](http://jinja.pocoo.org/docs/2.10/), en parsant les variables d'environnement
+Copy a file and applies [Jinja2](http://jinja.pocoo.org/docs/2.10/) templating, based on environment variables
+
+Parameter `force: yes` will overwrite destination if it already exists
 
 ````yaml
 - name: Task Name
@@ -217,9 +246,75 @@ Copie un fichier template au format [Jinja2](http://jinja.pocoo.org/docs/2.10/),
 
 ### Url
 
-Ouvre l'url donnée, dans le navigateur par défaut
+Opens the given url in the default browser
 
 ````yaml
 - name: Task Name
   url: http://some.url/
 ````
+
+## Tasks flags
+
+All tasks have 4 flags that can be set besides the command and its arguements.
+
+- `register_status` defaults to `False` or `no`
+- `catch_exception` defaults to `False` or `no`
+- `exit_if_not_ok` defaults to `True` or `yes`
+- `when` defaults to `"True"`
+
+##### 'Register status'
+
+`register_status` memorises the status returned by the task, and stores this 
+status in the environment variable `$JPS_REGISTERED_STATUS`, immediately available for the next task
+
+The executor returns the last registered status
+
+##### 'Catch exception' and 'exit if not ok'
+
+All tasks must return `OK`, maybe something else if something went wrong.
+
+Most tasks should not raise any exception (exception should be dealt with when writing the task plugin), 
+but it can happen (e.g when a socket is busy, a file missing, ...)
+
+Those two flags are used to control batch execution, when task execution doesn't return `OK`, 
+or when an Exception is raised.
+
+If `catch_exception` is set to `True` or `yes`, `exit_if_not_ok` is forced to `False` or `no`
+
+Here is a table of what happens on different cases
+
+| Task return | `catch_exception=True`<br>`exit_if_not_ok=False` | `catch_exception=False`<br>`exit_if_not_ok=True` |
+| --- | --- | --- |
+| `OK` | execution continues | execution continues |
+| not `OK` but no Exception is raised | execution continues | batch is exited<br>status is returned |
+| Exception raised | exception is catched<br>TASK_ERROR_IGNORED is returned<br>execution continues | exception is raised | 
+
+##### When
+
+The `when` clause allows to specify a python expression that will be evaluated
+
+If that expression doesn't evaluates to `True`, task is skipped
+
+Environment variables can be used. For example
+
+```yaml
+tasks:
+  - name: Render Image Sequence
+    raw:
+      command: $BLENDER_BIN --enable-autoexec ...
+      async: False
+      open_terminal: True
+    register_status: True
+    
+
+  - name: Make mov
+    raw:
+      command: python -m preview ....
+    when: $JPS_REGISTERED_STATUS == 'OK'
+    register_status: True
+```
+
+The "Make mov" task will be run only if the task "Render Image Sequence" returns OK
+
+_If the `when` clause evaluates to `False` and `register_status` is on, no status will be
+registered_

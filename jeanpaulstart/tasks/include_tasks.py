@@ -1,11 +1,12 @@
 import jeanpaulstart
+from jeanpaulstart.constants import *
 
 
 TASK_COMMAND = 'include_tasks'
 
 
 def validate(user_data):
-    return jeanpaulstart.OK, ""
+    return OK, ""
 
 
 def normalize_after_split(splitted):
@@ -13,4 +14,4 @@ def normalize_after_split(splitted):
 
 
 def apply_(file):
-    jeanpaulstart.run_from_filepath(file)
+    return jeanpaulstart.run_from_filepath(file)
